@@ -1,123 +1,137 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { usePathname } from "next/navigation";
+import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { 
-  Home,
+  LayoutGrid, 
+  BarChart3, 
+  Package, 
   ShoppingCart,
   Users,
-  Leaf,
-  BarChart3,
-  MapPin,
-  QrCode,
-  Truck,
-  Bot,
   TrendingUp,
+  MapPin,
+  Leaf,
+  Settings,
+  Shield,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Sprout
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+  Sprout,
+  Search,
+  Heart,
+  History,
+  CreditCard,
+  User,
+  Home,
+  Store
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export type NavItem = {
+interface MenuItem {
   name: string;
-  icon: React.ReactNode;
+  icon: React.ComponentType<any>;
   path: string;
-  subItems?: { name: string; path: string }[];
-  roles?: ('farmer' | 'consumer' | 'admin')[];
-};
+  badge?: string;
+  hasSubmenu?: boolean;
+  active?: boolean;
+}
 
-// Navigation items based on user role
-const getNavigationItems = (userRole: 'farmer' | 'consumer' | 'admin' = 'consumer'): NavItem[] => {
-  const baseItems: NavItem[] = [
-    {
-      name: "Dashboard",
-      icon: <Home className="w-5 h-5" />,
-      path: "/dashboard",
-      roles: ['farmer', 'consumer', 'admin']
-    },
-    {
-      name: "Marketplace",
-      icon: <ShoppingCart className="w-5 h-5" />,
-      path: "/marketplace",
-      roles: ['consumer', 'admin']
-    },
-    {
-      name: "Farm Management",
-      icon: <Sprout className="w-5 h-5" />,
-      path: "/farmer/dashboard",
-      roles: ['farmer', 'admin']
-    },
-    {
-      name: "Analytics",
-      icon: <BarChart3 className="w-5 h-5" />,
-      path: "/analytics",
-      roles: ['farmer', 'admin']
-    },
-    {
-      name: "Farm Locations",
-      icon: <MapPin className="w-5 h-5" />,
-      path: "/maps/farms",
-      roles: ['farmer', 'consumer', 'admin']
-    },
-    {
-      name: "QR Manager",
-      icon: <QrCode className="w-5 h-5" />,
-      path: "/maps/qr",
-      roles: ['farmer', 'consumer', 'admin']
-    },
-    {
-      name: "Supply Chain",
-      icon: <Truck className="w-5 h-5" />,
-      path: "/maps/supply-chain",
-      roles: ['farmer', 'consumer', 'admin']
-    },
-    {
-      name: "AI Insights",
-      icon: <Bot className="w-5 h-5" />,
-      path: "/ai/forecasting",
-      roles: ['farmer', 'admin']
-    },
-    {
-      name: "Market Trends",
-      icon: <TrendingUp className="w-5 h-5" />,
-      path: "/ai/recommendations",
-      roles: ['farmer', 'consumer', 'admin']
-    }
-  ];
-
-  // Filter items based on user role
-  return baseItems.filter(item => 
-    !item.roles || item.roles.includes(userRole)
-  );
-};
-
-interface SidebarProps {
-  userRole?: 'farmer' | 'consumer' | 'admin';
-  isExpanded?: boolean;
-  onToggle?: () => void;
+interface FieldFairSidebarProps {
+  isCollapsed?: boolean;
+  setIsCollapsed?: (collapsed: boolean) => void;
   isMobile?: boolean;
   isOpen?: boolean;
   onClose?: () => void;
+  userType?: 'farmer' | 'customer'; // New prop to determine user type
 }
 
-const Sidebar: React.FC<SidebarProps> = ({
-  userRole = 'consumer',
-  isExpanded = true,
-  onToggle,
+const FieldFairSidebar: React.FC<FieldFairSidebarProps> = ({
+  isCollapsed = false,
+  setIsCollapsed,
   isMobile = false,
   isOpen = false,
-  onClose
+  onClose,
+  userType = 'farmer' // Default to farmer for backward compatibility
 }) => {
   const pathname = usePathname();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const navigationItems = getNavigationItems(userRole);
+  const [activeMenu, setActiveMenu] = useState('Dashboard');
+  const [mounted, setMounted] = useState(false);
+  
+  // Farmer menu items
+  const farmerMenuItems: MenuItem[] = [
+    { name: 'Dashboard', icon: LayoutGrid, path: '/farmer/dashboard', active: true },
+    { name: 'My Products', icon: Package, path: '/farmer/products', hasSubmenu: true },
+    { name: 'Orders', icon: ShoppingCart, path: '/farmer/orders', badge: '3' },
+    { name: 'Analytics', icon: BarChart3, path: '/farmer/analytics' },
+    { name: 'Customers', icon: Users, path: '/farmer/customers' },
+    { name: 'Farm Location', icon: MapPin, path: '/farmer/location' }
+  ];
 
-  // Add smooth scroll effect whenever the sidebar is toggled
+  // Customer menu items
+  const customerMenuItems: MenuItem[] = [
+    { name: 'Browse Products', icon: Search, path: '/marketplace', active: true },
+    { name: 'My Orders', icon: ShoppingCart, path: '/customer/orders', badge: '2' },
+    { name: 'Shopping Cart', icon: Package, path: '/marketplace/cart' },
+    { name: 'Wishlist', icon: Heart, path: '/customer/wishlist' },
+    { name: 'Order History', icon: History, path: '/customer/history' },
+    { name: 'Find Farms', icon: MapPin, path: '/maps/farms' }
+  ];
+
+  // General menu items (same for both)
+  const generalItems: MenuItem[] = [
+    { name: 'Profile', icon: Settings, path: `/${userType}/profile` },
+    { name: 'Settings', icon: Shield, path: `/${userType}/settings` }
+  ];
+
+  // Get menu items based on user type
+  const getMenuItems = () => {
+    return userType === 'farmer' ? farmerMenuItems : customerMenuItems;
+  };
+
+  // Get user info based on type
+  const getUserInfo = () => {
+    if (userType === 'farmer') {
+      return {
+        name: 'Ravi Mahathaya',
+        role: 'Organic Farmer • Kurunegala',
+        avatar: 'RM'
+      };
+    } else {
+      return {
+        name: 'Priya Fernando',
+        role: 'Customer • Colombo',
+        avatar: 'PF'
+      };
+    }
+  };
+
+  // Get section title based on user type
+  const getSectionTitle = () => {
+    return userType === 'farmer' ? 'FARM MANAGEMENT' : 'SHOPPING';
+  };
+
+  // Prevent hydration issues
   useEffect(() => {
-    if (scrollRef.current) {
+    setMounted(true);
+  }, []);
+
+  // Set active menu based on current path
+  useEffect(() => {
+    if (mounted) {
+      const currentItem = [...getMenuItems(), ...generalItems].find(item => 
+        pathname.startsWith(item.path)
+      );
+      if (currentItem) {
+        setActiveMenu(currentItem.name);
+      }
+    }
+  }, [pathname, mounted, userType]);
+
+  // Add smooth scroll effect
+  useEffect(() => {
+    if (mounted && scrollRef.current) {
       scrollRef.current.classList.add('transition-all', 'duration-500', 'ease-in-out');
       
       const timer = setTimeout(() => {
@@ -128,20 +142,22 @@ const Sidebar: React.FC<SidebarProps> = ({
       
       return () => clearTimeout(timer);
     }
-  }, [isExpanded, isOpen]);
+  }, [isCollapsed, isOpen, mounted]);
 
-  // Reset scroll position when sidebar is opened
-  useEffect(() => {
-    if (isOpen && scrollRef.current) {
-      const timer = setTimeout(() => {
-        if (scrollRef.current) {
-          scrollRef.current.scrollTop = 0;
-        }
-      }, 100);
-      
-      return () => clearTimeout(timer);
+  const handleMenuClick = (item: MenuItem) => {
+    setActiveMenu(item.name);
+    if (isMobile && onClose) {
+      onClose();
     }
-  }, [isOpen]);
+  };
+
+  // Don't render until mounted to prevent hydration errors
+  if (!mounted) {
+    return null;
+  }
+
+  const userInfo = getUserInfo();
+  const menuItems = getMenuItems();
 
   return (
     <>
@@ -155,158 +171,210 @@ const Sidebar: React.FC<SidebarProps> = ({
       
       <aside 
         className={cn(
-          "fixed h-screen left-0 top-0 z-50 transition-all duration-500 ease-in-out border-r shadow-sm bg-white border-gray-200",
-          isExpanded ? "w-64" : "w-16",
+          "fixed h-screen left-0 top-0 z-50 transition-all duration-300 flex flex-col border-r shadow-lg",
+          "bg-[#1a4d3a] text-white", // FieldFair green theme
+          isCollapsed ? "w-16" : "w-64",
           isMobile ? (isOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"
         )}
       >
         {/* Background Pattern */}
-        <div className="absolute left-0 bottom-0 z-0 pointer-events-none w-full h-[80%]">
+        <div className="absolute left-0 bottom-0 z-0 pointer-events-none w-full h-[60%]">
           <div className="relative h-full w-full">
             <div className="absolute bottom-0 right-4 opacity-5">
-              <Leaf className="w-32 h-32 text-emerald-500" />
+              <Leaf className="w-32 h-32 text-emerald-300" />
             </div>
           </div>
         </div>
-        
+
         {/* Close button for mobile only */}
         {isMobile && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full z-50 bg-gray-100 text-gray-700 lg:hidden"
+            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full z-50 bg-emerald-800 text-emerald-200 lg:hidden hover:bg-emerald-700"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
         )}
         
-        {/* Top section with logo */}
-        <div 
-          className={cn(
-            "h-16 flex items-center relative z-10 border-b border-gray-200", 
-            !isExpanded ? "justify-center" : "px-5"
-          )}
-        >
-          {isExpanded ? (
-            <div className="flex items-center w-full justify-between">
-              <div className="flex items-center">
-                <Sprout className="w-8 h-8 text-emerald-600 mr-3" />
-                <span className="text-xl font-bold text-gray-900">FieldFair</span>
-              </div>
-              <div className="text-[8px] text-right mt-1 text-gray-500">
-                v1.0.0
-              </div>
+        {/* Logo Section */}
+        <div className={cn(
+          "border-b border-emerald-800/50 relative z-10",
+          isCollapsed ? "p-4" : "px-6 py-6"
+        )}>
+          <div className={cn(
+            "flex items-center",
+            isCollapsed ? "justify-center" : ""
+          )}>
+            {/* FieldFair Logo */}
+            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+              <Sprout className="w-5 h-5 text-emerald-900" />
             </div>
-          ) : (
-            <div className="flex justify-center items-center">
-              <Sprout className="w-8 h-8 text-emerald-600" />
-            </div>
-          )}
+            {!isCollapsed && (
+              <div className="ml-3">
+                <span className="text-xl font-bold text-white">FieldFair</span>
+                <div className="text-xs text-emerald-300/80">
+                  {userType === 'farmer' ? 'Farmer Dashboard' : 'Customer Portal'}
+                </div>
+              </div>
+            )}
+          </div>
           
           {/* Toggle button - hidden on mobile */}
-          {!isMobile && onToggle && (
+          {!isMobile && setIsCollapsed && (
             <button 
-              onClick={onToggle}
+              onClick={() => setIsCollapsed(!isCollapsed)}
               className={cn(
-                "absolute w-7 h-7 hidden lg:flex items-center justify-center rounded-full transition-all text-emerald-600 bg-gray-100 hover:bg-gray-200",
-                isExpanded ? "right-0 -mr-3.5 top-[22px]" : "right-0 -mr-3.5 top-[22px]"
+                "absolute w-7 h-7 hidden lg:flex items-center justify-center rounded-full transition-all bg-emerald-800 text-emerald-200 hover:bg-emerald-700",
+                isCollapsed ? "right-0 -mr-3.5 top-[22px]" : "right-0 -mr-3.5 top-[30px]"
               )}
               aria-label="Toggle sidebar"
             >
-              {isExpanded ? (
-                <ChevronLeft className="w-4 h-4" />
-              ) : (
+              {isCollapsed ? (
                 <ChevronRight className="w-4 h-4" />
+              ) : (
+                <ChevronLeft className="w-4 h-4" />
               )}
             </button>
           )}
         </div>
-
-        {/* Menu section with scroll effect */}
-        <div className="relative h-[calc(100vh-64px)] overflow-hidden">
-          {/* Top fade effect */}
-          <div className="absolute top-0 left-0 right-0 h-4 z-10 bg-gradient-to-b from-white to-transparent" />
-          
-          {/* Scrollable menu */}
+        
+        {/* Menu Section */}
+        <div className="flex-1 relative overflow-hidden">
           <div 
             ref={scrollRef}
-            className="h-full py-4 overflow-y-auto pb-12 transition-all duration-500 ease-in-out"
+            className="h-full py-6 overflow-y-auto transition-all duration-500 ease-in-out"
             style={{
               scrollbarWidth: 'thin',
-              scrollbarColor: '#e5e7eb transparent'
+              scrollbarColor: '#065f46 transparent'
             }}
           >
-            <nav className="flex flex-col space-y-1">
-              {navigationItems.map((item) => (
-                <div key={item.name} className={!isExpanded ? "flex justify-center" : ""}>
-                  <Link 
-                    href={item.path}
-                    onClick={() => {
-                      // Close sidebar on mobile when clicking a link
-                      if (isMobile && onClose) {
-                        onClose();
-                      }
-                    }}
-                    className={cn(
-                      "flex items-center py-3 rounded-lg transition-colors duration-300 group relative",
-                      pathname === item.path 
-                        ? "text-emerald-600 bg-emerald-50" 
-                        : "text-gray-600 hover:text-gray-800 hover:bg-gray-50",
-                      !isExpanded ? "w-full justify-center mx-auto" : "px-5 w-full"
-                    )}
-                  >
-                    {/* Active indicator */}
-                    {pathname === item.path && (
-                      <span className={cn(
-                        "absolute h-full bg-emerald-600 rounded-r-full transition-all duration-300",
-                        !isExpanded ? "w-1 left-0" : "w-1 left-0"
-                      )}></span>
-                    )}
-                    
-                    {/* Icon */}
-                    <span className={cn(
-                      "flex h-10 w-10 items-center justify-center transition-all duration-300",
-                      pathname === item.path && "text-emerald-600",
-                      !isExpanded && "mx-auto"
-                    )}>
-                      {item.icon}
-                    </span>
-                    
-                    {/* Label */}
-                    {isExpanded && (
-                      <span className="ml-3 text-sm font-medium transition-opacity duration-300">
-                        {item.name}
-                      </span>
-                    )}
-
-                    {/* Tooltip for collapsed state */}
-                    {!isExpanded && (
-                      <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 whitespace-nowrap">
-                        {item.name}
-                      </div>
-                    )}
-                  </Link>
+            {/* Main Section */}
+            <div className={cn(
+              "mb-6",
+              isCollapsed ? "px-2" : "px-4"
+            )}>
+              {!isCollapsed && (
+                <div className="text-[11px] text-emerald-300/70 mb-4 uppercase tracking-[0.1em] font-medium">
+                  {getSectionTitle()}
                 </div>
-              ))}
-            </nav>
-          </div>
-          
-          {/* Bottom fade effect */}
-          <div className="absolute bottom-0 left-0 right-0 h-12 z-10 bg-gradient-to-t from-white to-transparent" />
-        </div>
+              )}
+              <nav className="space-y-1">
+                {menuItems.map((item) => (
+                  <div key={item.name} className={isCollapsed ? "flex justify-center" : ""}>
+                    <Link 
+                      href={item.path}
+                      onClick={() => handleMenuClick(item)}
+                      className={cn(
+                        "flex items-center py-3 rounded-lg transition-all duration-200 group relative",
+                        activeMenu === item.name 
+                          ? 'bg-emerald-800/40 text-white' 
+                          : 'text-emerald-200/80 hover:bg-emerald-800/30 hover:text-white',
+                        isCollapsed ? "w-10 h-10 justify-center mx-auto" : "px-3 w-full"
+                      )}
+                    >
+                      {/* Active indicator - bright lime green */}
+                      {activeMenu === item.name && !isCollapsed && (
+                        <span className="absolute left-0 top-0 bottom-0 w-1 bg-lime-400 rounded-r-full"></span>
+                      )}
+                      
+                      <item.icon className={cn(
+                        "w-5 h-5",
+                        activeMenu === item.name ? "text-white" : "text-emerald-200/80"
+                      )} />
+                      
+                      {!isCollapsed && (
+                        <>
+                          <span className="ml-3 flex-1 text-left text-sm font-medium">{item.name}</span>
+                          {item.badge && (
+                            <span className="bg-orange-500 text-white text-[11px] px-2 py-0.5 rounded-full font-medium">
+                              {item.badge}
+                            </span>
+                          )}
+                          {item.hasSubmenu && (
+                            <ChevronDown className="w-4 h-4 text-emerald-200/60" />
+                          )}
+                        </>
+                      )}
 
-        {/* User role indicator */}
-        {isExpanded && (
-          <div className="absolute bottom-4 left-4 right-4 z-10">
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-              <div className="flex items-center">
-                <div className={cn(
-                  "w-2 h-2 rounded-full mr-2",
-                  userRole === 'farmer' ? "bg-green-500" :
-                  userRole === 'consumer' ? "bg-blue-500" : "bg-purple-500"
-                )} />
-                <span className="text-sm font-medium text-gray-700 capitalize">
-                  {userRole}
-                </span>
+                      {/* Tooltip for collapsed state */}
+                      {isCollapsed && (
+                        <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 whitespace-nowrap">
+                          {item.name}
+                          {item.badge && (
+                            <span className="ml-2 bg-orange-500 text-xs px-1.5 py-0.5 rounded-full">
+                              {item.badge}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </Link>
+                  </div>
+                ))}
+              </nav>
+            </div>
+            
+            {/* ACCOUNT Section */}
+            <div className={cn(
+              "mt-8",
+              isCollapsed ? "px-2" : "px-4"
+            )}>
+              {!isCollapsed && (
+                <div className="text-[11px] text-emerald-300/70 mb-4 uppercase tracking-[0.1em] font-medium">
+                  ACCOUNT
+                </div>
+              )}
+              <nav className="space-y-1">
+                {generalItems.map((item) => (
+                  <div key={item.name} className={isCollapsed ? "flex justify-center" : ""}>
+                    <Link 
+                      href={item.path}
+                      onClick={() => handleMenuClick(item)}
+                      className={cn(
+                        "flex items-center py-3 rounded-lg transition-all duration-200 group relative",
+                        activeMenu === item.name 
+                          ? 'bg-emerald-800/40 text-white' 
+                          : 'text-emerald-200/80 hover:bg-emerald-800/30 hover:text-white',
+                        isCollapsed ? "w-10 h-10 justify-center mx-auto" : "px-3 w-full"
+                      )}
+                    >
+                      {/* Active indicator */}
+                      {activeMenu === item.name && !isCollapsed && (
+                        <span className="absolute left-0 top-0 bottom-0 w-1 bg-lime-400 rounded-r-full"></span>
+                      )}
+                      
+                      <item.icon className={cn(
+                        "w-5 h-5",
+                        activeMenu === item.name ? "text-white" : "text-emerald-200/80"
+                      )} />
+                      
+                      {!isCollapsed && (
+                        <span className="ml-3 text-sm font-medium">{item.name}</span>
+                      )}
+
+                      {/* Tooltip for collapsed state */}
+                      {isCollapsed && (
+                        <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 whitespace-nowrap">
+                          {item.name}
+                        </div>
+                      )}
+                    </Link>
+                  </div>
+                ))}
+              </nav>
+            </div>
+          </div>
+        </div>
+        
+        {/* User Profile */}
+        {!isCollapsed && (
+          <div className="p-4 border-t border-emerald-800/50 relative z-10">
+            <div className="flex items-center">
+              <div className="w-10 h-10 bg-emerald-700 rounded-full flex items-center justify-center">
+                <span className="text-sm font-semibold text-white">{userInfo.avatar}</span>
+              </div>
+              <div className="ml-3">
+                <div className="text-sm font-medium text-white">{userInfo.name}</div>
+                <div className="text-xs text-emerald-300/80">{userInfo.role}</div>
               </div>
             </div>
           </div>
@@ -316,4 +384,4 @@ const Sidebar: React.FC<SidebarProps> = ({
   );
 };
 
-export default Sidebar;
+export default FieldFairSidebar;

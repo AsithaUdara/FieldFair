@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Navbar from '@/components/ui/layout/navbar';
 import Footer from '@/components/ui/layout/footer';
+import { usePopup } from '@/hooks/use-popup';
 
 const FieldFairLanding = () => {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
@@ -15,6 +16,8 @@ const FieldFairLanding = () => {
   const [isTestimonialHovered, setIsTestimonialHovered] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [highlightedCard, setHighlightedCard] = useState<'farmer' | 'consumer' | null>(null);
+  
+  const { openPopup } = usePopup();
 
   const testimonials = [
     {
@@ -52,7 +55,12 @@ const FieldFairLanding = () => {
       description:
         "Experience transparent, fair-priced agriculture with cutting-edge technology. From fresh farm produce to AI-powered insights that revolutionize how Sri Lanka eats and farms.",
       primaryButton: "Start Shopping",
+      primaryAction: () => {
+        console.log('Hero Start Shopping clicked - setting customer context');
+        openPopup('signin', 'customer');
+      },
       secondaryButton: "",
+      secondaryAction: null,
       showCard: true,
       image: "/hero-slide-1.jpg",
     },
@@ -64,7 +72,9 @@ const FieldFairLanding = () => {
       description:
         "Join thousands of farmers who've transformed their lives through direct sales, AI-powered agricultural insights, and transparent pricing that puts farmers first.",
       primaryButton: "Join as Farmer",
+      primaryAction: () => openPopup('signin', 'farmer'),
       secondaryButton: "Join as Customer",
+      secondaryAction: () => openPopup('signin', 'customer'),
       showCard: false,
       image: "/hero-slide-2.jpg",
     },
@@ -76,7 +86,9 @@ const FieldFairLanding = () => {
       description:
         "Harness artificial intelligence for crop forecasting, market insights, and supply chain optimization. Experience the future of sustainable farming today.",
       primaryButton: "Explore AI Features",
+      primaryAction: () => openPopup('signin', 'customer'),
       secondaryButton: "",
+      secondaryAction: null,
       showCard: false,
       image: "/hero-slide-3.jpg",
     },
@@ -135,12 +147,25 @@ const FieldFairLanding = () => {
 
       {/* Hero Section */}
       <section id="hero" className="relative overflow-hidden h-screen">
-        {/* Background */}
+        {/* Background Slides Container */}
         <div className="absolute inset-0">
-          <div
-            className="w-full h-full bg-cover bg-center transition-all duration-1000 ease-out"
-            style={{ backgroundImage: `url('${currentSlideData.image}')` }}
-          />
+          <div className="relative w-full h-full overflow-hidden">
+            {heroSlides.map((slide, index) => (
+              <div
+                key={index}
+                className={`absolute inset-0 w-full h-full transition-all duration-[2000ms] ease-in-out ${
+                  index === currentSlide 
+                    ? 'opacity-100 scale-100' 
+                    : 'opacity-0 scale-105'
+                }`}
+                style={{
+                  backgroundImage: `url('${slide.image}')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              />
+            ))}
+          </div>
           <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/40 to-black/60" />
           <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/30 via-transparent to-transparent" />
         </div>
@@ -168,7 +193,10 @@ const FieldFairLanding = () => {
                 {currentSlideData.description}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4 animate-slide-in-left">
-                <button className="group relative bg-gradient-to-r from-emerald-500 to-green-500 text-white px-8 py-4 rounded-xl font-bold shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-500 transform hover:scale-105 hover:-translate-y-1 overflow-hidden">
+                <button 
+                  onClick={currentSlideData.primaryAction}
+                  className="group relative bg-gradient-to-r from-emerald-500 to-green-500 text-white px-8 py-4 rounded-xl font-bold shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-500 transform hover:scale-105 hover:-translate-y-1 overflow-hidden"
+                >
                   <span className="relative z-10 flex items-center justify-center space-x-2">
                     <span>{currentSlideData.primaryButton}</span>
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
@@ -178,8 +206,11 @@ const FieldFairLanding = () => {
                 </button>
                 
                 {/* Only render secondary button if it exists and is not empty */}
-                {currentSlideData.secondaryButton && (
-                  <button className="group relative bg-white text-gray-900 px-8 py-4 rounded-xl font-bold shadow-xl shadow-gray-200/25 hover:shadow-gray-300/40 transition-all duration-500 transform hover:scale-105 hover:-translate-y-1 overflow-hidden">
+                {currentSlideData.secondaryButton && currentSlideData.secondaryAction && (
+                  <button 
+                    onClick={currentSlideData.secondaryAction}
+                    className="group relative bg-white text-gray-900 px-8 py-4 rounded-xl font-bold shadow-xl shadow-gray-200/25 hover:shadow-gray-300/40 transition-all duration-500 transform hover:scale-105 hover:-translate-y-1 overflow-hidden"
+                  >
                     <span className="relative z-10 flex items-center justify-center space-x-2">
                       <span>{currentSlideData.secondaryButton}</span>
                       <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
@@ -193,79 +224,91 @@ const FieldFairLanding = () => {
 
             {/* Right */}
             <div className="relative flex justify-center lg:justify-end animate-slide-in-right">
-              {currentSlideData.showCard && (
-                <div className="relative group max-w-sm">
-                  <div className="absolute -inset-6 bg-gradient-to-r from-emerald-500/20 to-green-500/20 rounded-3xl blur-xl opacity-70 group-hover:opacity-100 transition-all duration-700 animate-pulse-glow" />
-                 <div className="relative bg-white rounded-2xl p-6 shadow-2xl border border-white/20 transform group-hover:scale-105 group-hover:rotate-1 transition-all duration-700 animate-float-card">
-                    {/* Card header */}
-                    <div className="flex items-start space-x-3 mb-5">
-                      <div className="w-14 h-14 bg-gradient-to-br from-emerald-100 to-green-100 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
-                        <span className="text-3xl animate-bounce-gentle">🥕</span>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-black text-lg text-gray-900 mb-1">Fresh Carrots</h3>
-                        <p className="text-gray-600 text-sm font-medium">From Nuwara Eliya Farms</p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                          <span className="text-xs text-green-600 font-semibold">Available Now</span>
+              <div 
+                className={`${
+                  currentSlideData.showCard ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                {currentSlideData.showCard && (
+                  <div className="relative group max-w-sm">
+                    <div className="absolute -inset-6 bg-gradient-to-r from-emerald-500/20 to-green-500/20 rounded-3xl blur-xl opacity-70 group-hover:opacity-100 transition-all duration-700 animate-pulse-glow" />
+                   <div className="relative bg-white rounded-2xl p-6 shadow-2xl border border-white/20 transform group-hover:scale-105 group-hover:rotate-1 transition-all duration-700 animate-float-card">
+                      {/* Card header */}
+                      <div className="flex items-start space-x-3 mb-5">
+                        <div className="w-14 h-14 bg-gradient-to-br from-emerald-100 to-green-100 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
+                          <span className="text-3xl animate-bounce-gentle">🥕</span>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-black text-lg text-gray-900 mb-1">Fresh Carrots</h3>
+                          <p className="text-gray-600 text-sm font-medium">From Nuwara Eliya Farms</p>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                            <span className="text-xs text-green-600 font-semibold">Available Now</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xl font-black text-emerald-600 animate-price-highlight">Rs. 180</div>
+                          <div className="text-gray-500 text-xs font-medium">per kg</div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-xl font-black text-emerald-600 animate-price-highlight">Rs. 180</div>
-                        <div className="text-gray-500 text-xs font-medium">per kg</div>
-                      </div>
-                    </div>
-                    {/* Details */}
-                    <div className="bg-gradient-to-r from-gray-50 to-emerald-50 rounded-xl p-4 mb-5 group-hover:from-gray-100 group-hover:to-emerald-100 transition-all duration-300">
-                      <div className="flex items-center space-x-2 text-gray-700 mb-3">
-                        <MapPin className="w-4 h-4 text-emerald-600 animate-pulse" />
-                        <span className="text-sm font-medium">2.5 km away</span>
-                        <span className="text-gray-400 text-xs">•</span>
-                        <div className="flex items-center space-x-1">
-                          <Leaf className="w-3 h-3 text-green-600 animate-pulse" />
-                          <span className="text-green-600 font-semibold text-xs">Organic Certified</span>
+                      {/* Details */}
+                      <div className="bg-gradient-to-r from-gray-50 to-emerald-50 rounded-xl p-4 mb-5 group-hover:from-gray-100 group-hover:to-emerald-100 transition-all duration-300">
+                        <div className="flex items-center space-x-2 text-gray-700 mb-3">
+                          <MapPin className="w-4 h-4 text-emerald-600 animate-pulse" />
+                          <span className="text-sm font-medium">2.5 km away</span>
+                          <span className="text-gray-400 text-xs">•</span>
+                          <div className="flex items-center space-x-1">
+                            <Leaf className="w-3 h-3 text-green-600 animate-pulse" />
+                            <span className="text-green-600 font-semibold text-xs">Organic Certified</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2 text-gray-700 mb-3">
+                          <Shield className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-medium">Farm Fresh</span>
+                          <span className="text-gray-400 text-xs">•</span>
+                          <span className="text-blue-600 font-semibold text-xs">Harvested Today</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-1">
+                            {[1,2,3,4,5].map(i => (
+                              <Star
+                                key={i}
+                                className="w-4 h-4 fill-yellow-400 text-yellow-400 animate-twinkle"
+                                style={{ animationDelay: `${i * 100}ms` }}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-gray-600 text-sm font-medium">(127 reviews)</span>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2 text-gray-700 mb-3">
-                        <Shield className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium">Farm Fresh</span>
-                        <span className="text-gray-400 text-xs">•</span>
-                        <span className="text-blue-600 font-semibold text-xs">Harvested Today</span>
+                      {/* Action */}
+                      <button 
+                        onClick={() => {
+                          console.log('Card Add to Cart clicked - setting customer context');
+                          openPopup('signin', 'customer');
+                        }}
+                        className="w-full bg-gradient-to-r from-emerald-600 to-green-600 text-white py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 relative overflow-hidden group/btn"
+                      >
+                        <span className="relative z-10 flex items-center justify-center space-x-2">
+                          <span>Add to Cart</span>
+                          <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform duration-300" />
+                        </span>
+                        <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-500" />
+                      </button>
+                      {/* Badges */}
+                      <div className="absolute -top-3 -right-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white p-2 rounded-xl shadow-lg animate-bounce-gentle">
+                        <Shield className="w-4 h-4" />
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-1">
-                          {[1,2,3,4,5].map(i => (
-                            <Star
-                              key={i}
-                              className="w-4 h-4 fill-yellow-400 text-yellow-400 animate-twinkle"
-                              style={{ animationDelay: `${i * 100}ms` }}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-gray-600 text-sm font-medium">(127 reviews)</span>
+                      <div className="absolute -bottom-3 -left-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white p-2 rounded-xl shadow-lg animate-pulse-gentle">
+                        <TrendingUp className="w-4 h-4" />
                       </div>
-                    </div>
-                    {/* Action */}
-                    <button className="w-full bg-gradient-to-r from-emerald-600 to-green-600 text-white py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 relative overflow-hidden group/btn">
-                      <span className="relative z-10 flex items-center justify-center space-x-2">
-                        <span>Add to Cart</span>
-                        <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform duration-300" />
-                      </span>
-                      <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-500" />
-                    </button>
-                    {/* Badges */}
-                    <div className="absolute -top-3 -right-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white p-2 rounded-xl shadow-lg animate-bounce-gentle">
-                      <Shield className="w-4 h-4" />
-                    </div>
-                    <div className="absolute -bottom-3 -left-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white p-2 rounded-xl shadow-lg animate-pulse-gentle">
-                      <TrendingUp className="w-4 h-4" />
-                    </div>
-                    <div className="absolute top-1/2 -left-4 bg-gradient-to-r from-orange-500 to-red-500 text-white p-2 rounded-xl shadow-lg animate-bounce-gentle transform -translate-y-1/2">
-                      <Leaf className="w-3 h-3" />
+                      <div className="absolute top-1/2 -left-4 bg-gradient-to-r from-orange-500 to-red-500 text-white p-2 rounded-xl shadow-lg animate-bounce-gentle transform -translate-y-1/2">
+                        <Leaf className="w-3 h-3" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
             
             {/* Slide indicators - Bottom center */}
@@ -276,7 +319,7 @@ const FieldFairLanding = () => {
                   onClick={() => setCurrentSlide(idx)}
                   className={`w-4 h-4 transition-all duration-500 rounded-full ${
                     idx === currentSlide
-                      ? 'bg-emerald-400'
+                      ? 'bg-emerald-400 scale-125'
                       : 'bg-white/30 hover:bg-white/50'
                   }`}
                 />
@@ -288,19 +331,19 @@ const FieldFairLanding = () => {
         {/* Slide controls - At screen edges */}
         <button
           onClick={prevSlide}
-          className="absolute left-4 top-1/2 transform -translate-y-1/2 group p-3 hover:bg-white/15 hover:backdrop-blur-lg transition-all duration-300 z-10"
+          className="absolute left-4 top-1/2 transform -translate-y-1/2 group p-3 hover:bg-white/15 hover:backdrop-blur-lg transition-all duration-300 z-10 rounded-full"
         >
           <ChevronLeft className="w-8 h-8 text-white group-hover:scale-110 transition-transform duration-300" />
         </button>
         <button
           onClick={nextSlide}
-          className="absolute right-4 top-1/2 transform -translate-y-1/2 group p-3 hover:bg-white/15 hover:backdrop-blur-lg transition-all duration-300 z-10"
+          className="absolute right-4 top-1/2 transform -translate-y-1/2 group p-3 hover:bg-white/15 hover:backdrop-blur-lg transition-all duration-300 z-10 rounded-full"
         >
           <ChevronRight className="w-8 h-8 text-white group-hover:scale-110 transition-transform duration-300" />
         </button>
       </section>
 
-      {/* Features Section - Updated for cleaner, more professional look */}
+      {/* Features Section */}
       <section id="features" className="py-24 bg-gray-50 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(16,185,129,0.03),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(34,197,94,0.03),transparent_50%)]" />
@@ -398,7 +441,7 @@ const FieldFairLanding = () => {
         </div>
       </section>
 
-      {/* About Section (Testimonials) - Updated to match features section styling */}
+      {/* About Section (Testimonials) */}
       <section id="about" className="py-24 bg-gray-50 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(16,185,129,0.03),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(34,197,94,0.03),transparent_50%)]" />
@@ -473,65 +516,74 @@ const FieldFairLanding = () => {
             Whether you're a farmer looking to reach more customers or a consumer wanting fresh, traceable produce, FieldFair is your platform.
           </p>
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Farmer Card */}
-            <div className={`relative bg-white/10 backdrop-blur-lg rounded-2xl p-8 border transition-all duration-500 ${
-              highlightedCard === 'farmer' 
-                ? 'border-emerald-400 shadow-xl shadow-emerald-500/25 scale-105' 
-                : 'border-white/20'
-            }`}>
-              {highlightedCard === 'farmer' && (
-                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-green-500 rounded-2xl opacity-20 animate-pulse"></div>
-              )}
-              <div className="relative">
-                <h3 className="text-2xl font-bold mb-4">For Farmers</h3>
-                <ul className="space-y-3 text-left mb-6">
-                  {['Sell directly to consumers', 'AI-powered crop insights', 'Better profit margins'].map((item,i) => (
-                    <li key={i} className="flex items-center space-x-2">
-                      <Check className="w-5 h-5 text-green-400" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <button className="group relative w-full bg-gradient-to-r from-emerald-500 to-green-500 text-white py-3 rounded-lg font-bold shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-500 transform hover:scale-105 hover:-translate-y-1 overflow-hidden">
-                  <span className="relative z-10 flex items-center justify-center space-x-2">
-                    <span>Register as Farmer</span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-green-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                </button>
-              </div>
-            </div>
+{/* Farmer Card */}
+<div className={`relative bg-white/10 backdrop-blur-lg rounded-2xl p-8 border transition-all duration-500 ${
+  highlightedCard === 'farmer' 
+    ? 'border-emerald-400 shadow-xl shadow-emerald-500/25 scale-105' 
+    : 'border-white/20'
+}`}>
+  {highlightedCard === 'farmer' && (
+    <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-green-500 rounded-2xl opacity-20 animate-pulse"></div>
+  )}
+  <div className="relative">
+    <h3 className="text-2xl font-bold mb-4">For Farmers</h3>
+    <ul className="space-y-3 text-left mb-6">
+      {['Sell directly to consumers', 'AI-powered crop insights', 'Better profit margins'].map((item,i) => (
+        <li key={i} className="flex items-center space-x-2">
+          <Check className="w-5 h-5 text-green-400" />
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+    <button 
+      onClick={() => openPopup('signin', 'farmer')}
+      className="group relative w-full bg-gradient-to-r from-emerald-500 to-green-500 text-white py-3 rounded-lg font-bold shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-500 transform hover:scale-105 hover:-translate-y-1 overflow-hidden"
+    >
+      <span className="relative z-10 flex items-center justify-center space-x-2">
+        <span>Join as Farmer</span>
+        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+      </span>
+      <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-green-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+    </button>
+  </div>
+</div>
 
-            {/* Consumer Card */}
-            <div className={`relative bg-white/10 backdrop-blur-lg rounded-2xl p-8 border transition-all duration-500 ${
-              highlightedCard === 'consumer' 
-                ? 'border-emerald-400 shadow-xl shadow-emerald-500/25 scale-105' 
-                : 'border-white/20'
-            }`}>
-              {highlightedCard === 'consumer' && (
-                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-green-500 rounded-2xl opacity-20 animate-pulse"></div>
-              )}
-              <div className="relative">
-                <h3 className="text-2xl font-bold mb-4">For Consumers</h3>
-                <ul className="space-y-3 text-left mb-6">
-                  {['Fresh, local produce', 'Full traceability', 'Fair prices'].map((item,i) => (
-                    <li key={i} className="flex items-center space-x-2">
-                      <Check className="w-5 h-5 text-green-400" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <button className="group relative w-full bg-white text-gray-900 py-3 rounded-lg font-bold shadow-xl shadow-gray-200/25 hover:shadow-gray-300/40 transition-all duration-500 transform hover:scale-105 hover:-translate-y-1 overflow-hidden">
-                  <span className="relative z-10 flex items-center justify-center space-x-2">
-                    <span>Start Shopping</span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute inset-0 bg-gray-900/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                </button>
-              </div>
-            </div>
+{/* Consumer Card */}
+<div className={`relative bg-white/10 backdrop-blur-lg rounded-2xl p-8 border transition-all duration-500 ${
+  highlightedCard === 'consumer' 
+    ? 'border-emerald-400 shadow-xl shadow-emerald-500/25 scale-105' 
+    : 'border-white/20'
+}`}>
+  {highlightedCard === 'consumer' && (
+    <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-green-500 rounded-2xl opacity-20 animate-pulse"></div>
+  )}
+  <div className="relative">
+    <h3 className="text-2xl font-bold mb-4">For Consumers</h3>
+    <ul className="space-y-3 text-left mb-6">
+      {['Fresh, local produce', 'Full traceability', 'Fair prices'].map((item,i) => (
+        <li key={i} className="flex items-center space-x-2">
+          <Check className="w-5 h-5 text-green-400" />
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+    <button 
+      onClick={() => {
+        console.log('CTA Start Shopping clicked - setting customer context');
+        openPopup('signin', 'customer');
+      }}
+      className="group relative w-full bg-white text-gray-900 py-3 rounded-lg font-bold shadow-xl shadow-gray-200/25 hover:shadow-gray-300/40 transition-all duration-500 transform hover:scale-105 hover:-translate-y-1 overflow-hidden"
+    >
+      <span className="relative z-10 flex items-center justify-center space-x-2">
+        <span>Start Shopping</span>
+        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+      </span>
+      <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-gray-900/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+    </button>
+  </div>
+</div>
           </div>
         </div>
       </section>

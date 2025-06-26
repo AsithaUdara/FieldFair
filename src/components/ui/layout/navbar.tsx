@@ -1,8 +1,8 @@
-// components/ui/layout/navbar.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
+import { usePopup } from '@/hooks/use-popup';
 
 interface NavbarProps {
   onCardHighlight?: (cardType: 'farmer' | 'consumer' | null) => void;
@@ -12,22 +12,20 @@ const Navbar: React.FC<NavbarProps> = ({ onCardHighlight }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState('hero');
+  const { openPopup } = usePopup();
 
-  // Toggle isScrolled when you leave the top
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 0);
-      
-      // Check which section is currently in view
+
       const sections = ['hero', 'features', 'about', 'cta'];
-      const scrollPosition = window.scrollY + 100; // Offset for navbar height
-      
-      // Check if we're at the top for hero section
+      const scrollPosition = window.scrollY + 100;
+
       if (window.scrollY < 100) {
         setActiveSection('hero');
         return;
       }
-      
+
       for (const section of sections) {
         const element = document.getElementById(section);
         if (element) {
@@ -39,16 +37,19 @@ const Navbar: React.FC<NavbarProps> = ({ onCardHighlight }) => {
         }
       }
     };
-    
+
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // in case you're already scrolled
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Smooth scroll navigation
-  const handleNavClick = (sectionId: string, e: React.MouseEvent, cardType?: 'farmer' | 'consumer') => {
+  const handleNavClick = (
+    sectionId: string,
+    e: React.MouseEvent,
+    cardType?: 'farmer' | 'consumer'
+  ) => {
     e.preventDefault();
-    
+
     if (sectionId === 'hero') {
       window.scrollTo({
         top: 0,
@@ -57,27 +58,24 @@ const Navbar: React.FC<NavbarProps> = ({ onCardHighlight }) => {
     } else {
       const element = document.getElementById(sectionId);
       if (element) {
-        const offsetTop = element.offsetTop - 80; // Account for navbar height
+        const offsetTop = element.offsetTop - 80;
         window.scrollTo({
           top: offsetTop,
           behavior: 'smooth'
         });
       }
     }
-    
-    // Highlight specific card if cardType is provided
+
     if (cardType && onCardHighlight) {
       setTimeout(() => {
         onCardHighlight(cardType);
-        // Remove highlight after 3 seconds
         setTimeout(() => onCardHighlight(null), 3000);
-      }, 500); // Delay to let scroll complete
+      }, 500);
     }
-    
-    setIsMenuOpen(false); // Close mobile menu if open
+
+    setIsMenuOpen(false);
   };
 
-  // Navigation items with their corresponding section IDs
   const navItems = [
     { name: 'Home', id: 'hero' },
     { name: 'Features', id: 'features' },
@@ -86,32 +84,28 @@ const Navbar: React.FC<NavbarProps> = ({ onCardHighlight }) => {
     { name: 'For Consumers', id: 'cta', cardType: 'consumer' as const }
   ];
 
-  // Filter nav items based on active section
   const getVisibleNavItems = () => {
     if (activeSection === 'hero') {
-      return navItems; // Show all items including Home when in hero section
+      return navItems;
     } else {
-      return navItems.filter(item => item.name !== 'Home'); // Hide Home in other sections
+      return navItems.filter(item => item.name !== 'Home');
     }
   };
 
-  // Conditional text colour with active state
   const getLinkClass = (item: any) => {
     const baseClass = isScrolled
       ? 'text-gray-700 hover:text-emerald-600'
       : 'text-white hover:text-gray-200';
-    
+
     let isActive = false;
     if (item.id === 'hero' && activeSection === 'hero') {
       isActive = true;
     } else if (item.id === activeSection && item.id !== 'hero') {
       isActive = true;
     }
-    
-    const activeClass = isScrolled
-      ? 'text-emerald-600'
-      : 'text-emerald-300';
-    
+
+    const activeClass = isScrolled ? 'text-emerald-600' : 'text-emerald-300';
+
     return isActive ? `${baseClass.split(' ')[0]} ${activeClass}` : baseClass;
   };
 
@@ -136,15 +130,15 @@ const Navbar: React.FC<NavbarProps> = ({ onCardHighlight }) => {
             <div>
               <h1
                 className={`text-xl font-bold transition-all duration-300 cursor-pointer ${
-                  isScrolled 
-                    ? 'text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600' 
+                  isScrolled
+                    ? 'text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600'
                     : 'text-white'
                 }`}
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
                 FieldFair
               </h1>
-              <p className={isScrolled ? 'text-emerald-600' : 'text-emerald-300'}>
+              <p className={`text-sm ${isScrolled ? 'text-emerald-600' : 'text-emerald-300'}`}>
                 Farm to Table
               </p>
             </div>
@@ -160,24 +154,26 @@ const Navbar: React.FC<NavbarProps> = ({ onCardHighlight }) => {
                 className={`relative ${getLinkClass(item)} transition-all duration-300 font-medium group`}
               >
                 {item.name}
-                <span className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-emerald-500 to-green-500 transition-all duration-300 ${
-                  (item.id === 'hero' && activeSection === 'hero') || 
-                  (item.id === activeSection && item.id !== 'hero') 
-                    ? 'w-full' 
-                    : 'w-0 group-hover:w-full'
-                }`} />
+                <span
+                  className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-emerald-500 to-green-500 transition-all duration-300 ${
+                    (item.id === 'hero' && activeSection === 'hero') ||
+                    (item.id === activeSection && item.id !== 'hero')
+                      ? 'w-full'
+                      : 'w-0 group-hover:w-full'
+                  }`}
+                />
               </a>
             ))}
             <button 
-              onClick={(e) => handleNavClick('cta', e)}
-              className="group relative bg-gradient-to-r from-emerald-600 to-green-600 text-white px-6 py-2.5 rounded-xl font-semibold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-500 overflow-hidden"
-            >
-              <span className="relative z-10 flex items-center justify-center space-x-2">
-                <span>Get Started</span>
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-700 to-green-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-            </button>
+  onClick={() => openPopup('signin', 'general')}
+  className="group relative bg-gradient-to-r from-emerald-600 to-green-600 text-white px-6 py-2.5 rounded-xl font-semibold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-500 overflow-hidden"
+>
+  <span className="relative z-10 flex items-center justify-center space-x-2">
+    <span>Sign In</span>
+  </span>
+  <div className="absolute inset-0 bg-gradient-to-r from-emerald-700 to-green-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+  <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+</button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -187,13 +183,9 @@ const Navbar: React.FC<NavbarProps> = ({ onCardHighlight }) => {
                 ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                 : 'bg-transparent hover:bg-white/20 text-white'
             }`}
-            onClick={() => setIsMenuOpen((o) => !o)}
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
-            {isMenuOpen ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <Menu className="w-5 h-5" />
-            )}
+            {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
@@ -214,25 +206,29 @@ const Navbar: React.FC<NavbarProps> = ({ onCardHighlight }) => {
                 href={`#${item.id}`}
                 onClick={(e) => handleNavClick(item.id, e, item.cardType)}
                 className={`block ${
-                  (item.id === 'hero' && activeSection === 'hero') || 
+                  (item.id === 'hero' && activeSection === 'hero') ||
                   (item.id === activeSection && item.id !== 'hero')
-                    ? (isScrolled ? 'text-emerald-600' : 'text-emerald-300')
-                    : (isScrolled ? 'text-gray-700' : 'text-white')
+                    ? isScrolled
+                      ? 'text-emerald-600'
+                      : 'text-emerald-300'
+                    : isScrolled
+                    ? 'text-gray-700'
+                    : 'text-white'
                 } hover:text-emerald-600 font-medium py-2 transition-colors`}
               >
                 {item.name}
               </a>
             ))}
-            <button 
-              onClick={(e) => handleNavClick('cta', e)}
-              className="group relative w-full bg-gradient-to-r from-emerald-600 to-green-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-500 overflow-hidden"
-            >
-              <span className="relative z-10 flex items-center justify-center space-x-2">
-                <span>Get Started</span>
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-700 to-green-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-            </button>
+<button 
+  onClick={() => openPopup('signin', 'general')}
+  className="group relative w-full bg-gradient-to-r from-emerald-600 to-green-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-500 overflow-hidden"
+>
+  <span className="relative z-10 flex items-center justify-center space-x-2">
+    <span>Sign In</span>
+  </span>
+  <div className="absolute inset-0 bg-gradient-to-r from-emerald-700 to-green-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+  <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+</button>
           </div>
         </div>
       )}
